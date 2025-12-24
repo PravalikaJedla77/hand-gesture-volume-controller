@@ -9,9 +9,9 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
 # -------------------- Open YouTube for Demo --------------------
 webbrowser.open("https://www.youtube.com/watch?v=5qap5aO4i9A")
-time.sleep(5)  # Allow video to load before starting gesture control
+time.sleep(5)  # Allow video to load
 
-# -------------------- MediaPipe Hand Setup --------------------
+# -------------------- MediaPipe Setup --------------------
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(max_num_hands=1)
 mp_draw = mp.solutions.drawing_utils
@@ -30,7 +30,7 @@ vol_range = volume.GetVolumeRange()
 min_vol = vol_range[0]
 max_vol = vol_range[1]
 
-# -------------------- Volume UI Variables --------------------
+# -------------------- UI Variables --------------------
 vol_bar = 400
 vol_perc = 0
 
@@ -57,7 +57,7 @@ while True:
                 lm_list.append((id, cx, cy))
 
             if lm_list:
-                # Thumb tip (4) and Index finger tip (8)
+                # Thumb tip (4) and Index tip (8)
                 x1, y1 = lm_list[4][1], lm_list[4][2]
                 x2, y2 = lm_list[8][1], lm_list[8][2]
 
@@ -72,21 +72,25 @@ while True:
                 # Distance between fingers
                 length = math.hypot(x2 - x1, y2 - y1)
 
-                # Map distance to volume range
+                # Map distance to volume
                 vol = min_vol + (length / 200) * (max_vol - min_vol)
                 vol = max(min(vol, max_vol), min_vol)
                 volume.SetMasterVolumeLevel(vol, None)
 
-                # Volume percentage
+                # Volume UI
                 vol_perc = int((vol - min_vol) / (max_vol - min_vol) * 100)
                 vol_bar = 400 - int((vol_perc / 100) * 300)
 
-    # -------------------- Volume Bar UI --------------------
+    # -------------------- Draw Volume Bar --------------------
     cv2.rectangle(img, (50, 100), (85, 400), (255, 255, 255), 2)
     cv2.rectangle(img, (50, vol_bar), (85, 400), (0, 255, 0), cv2.FILLED)
     cv2.putText(
-        img, f'{vol_perc} %', (40, 450),
-        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2
+        img, f'{vol_perc} %',
+        (40, 450),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
     )
 
     cv2.imshow("Hand Gesture Volume Controller", img)
@@ -97,4 +101,3 @@ while True:
 # -------------------- Cleanup --------------------
 cap.release()
 cv2.destroyAllWindows()
-
