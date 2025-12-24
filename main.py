@@ -9,7 +9,7 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
 # -------------------- Open YouTube for Demo --------------------
 webbrowser.open("https://www.youtube.com/watch?v=5qap5aO4i9A")
-time.sleep(5)  # Allow video to load
+time.sleep(5)
 
 # -------------------- MediaPipe Setup --------------------
 mp_hands = mp.solutions.hands
@@ -25,10 +25,7 @@ interface = devices.Activate(
     IAudioEndpointVolume._iid_, CLSCTX_ALL, None
 )
 volume = cast(interface, POINTER(IAudioEndpointVolume))
-
-vol_range = volume.GetVolumeRange()
-min_vol = vol_range[0]
-max_vol = vol_range[1]
+min_vol, max_vol, _ = volume.GetVolumeRange()
 
 # -------------------- UI Variables --------------------
 vol_bar = 400
@@ -49,35 +46,30 @@ while True:
                 img, hand_landmarks, mp_hands.HAND_CONNECTIONS
             )
 
-            lm_list = []
             h, w, _ = img.shape
+            lm_list = []
 
-            for id, lm in enumerate(hand_landmarks.landmark):
+            for lm_id, lm in enumerate(hand_landmarks.landmark):
                 cx, cy = int(lm.x * w), int(lm.y * h)
-                lm_list.append((id, cx, cy))
+                lm_list.append((lm_id, cx, cy))
 
             if lm_list:
-                # Thumb tip (4) and Index tip (8)
-                x1, y1 = lm_list[4][1], lm_list[4][2]
-                x2, y2 = lm_list[8][1], lm_list[8][2]
+                x1, y1 = lm_list[4][1], lm_list[4][2]   # Thumb
+                x2, y2 = lm_list[8][1], lm_list[8][2]   # Index
 
                 cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
-                # Draw visuals
                 cv2.circle(img, (x1, y1), 10, (255, 0, 0), cv2.FILLED)
                 cv2.circle(img, (x2, y2), 10, (255, 0, 0), cv2.FILLED)
                 cv2.line(img, (x1, y1), (x2, y2), (255, 0, 255), 2)
                 cv2.circle(img, (cx, cy), 8, (0, 255, 0), cv2.FILLED)
 
-                # Distance between fingers
                 length = math.hypot(x2 - x1, y2 - y1)
 
-                # Map distance to volume
                 vol = min_vol + (length / 200) * (max_vol - min_vol)
                 vol = max(min(vol, max_vol), min_vol)
                 volume.SetMasterVolumeLevel(vol, None)
 
-                # Volume UI
                 vol_perc = int((vol - min_vol) / (max_vol - min_vol) * 100)
                 vol_bar = 400 - int((vol_perc / 100) * 300)
 
